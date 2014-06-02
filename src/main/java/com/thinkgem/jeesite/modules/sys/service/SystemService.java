@@ -395,11 +395,13 @@ public class SystemService extends BaseService  {
 	private void merge(User user,List<Menu> menuList) {
 		String userId = ObjectUtils.toString(user.getId());
 		List<Group> activitiGroupList = identityService.createGroupQuery().groupMember(userId).list();
+		//if user menu is empty, delete all activiti group
 		if(Collections3.isEmpty(menuList)) {
 			for(Group group:activitiGroupList) {
 				identityService.deleteMembership(userId, group.getId());
 			}
 		} else {
+			//sync user menu to activiti group
 			Map<String,String> groupMap =Maps.newHashMap();
 			for(Menu menu:menuList) {
 				groupMap.put(menu.getActivitiGroupId(), menu.getActivitiGroupName());
@@ -412,6 +414,10 @@ public class SystemService extends BaseService  {
 			}
 			for(String groupId:groupMap.keySet()) {
 				if(StringUtils.isNotBlank(groupId) && !activitiGroupMap.containsKey(groupId)) {
+					//Save new Group
+					Group g=identityService.newGroup(groupId);
+					g.setName(groupMap.get(groupId));
+					identityService.saveGroup(g);
 					identityService.createMembership(userId, groupId);
 				}
 			}
